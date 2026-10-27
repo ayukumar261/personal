@@ -7,21 +7,13 @@ export default config({
   collections: {
     posts: collection({
       label: "Posts",
-      columns: ["title", "publishedDate", "draft"],
+      columns: ["title", "draft"],
       slugField: "title",
       path: "content/posts/*",
       format: { contentField: "content" },
       schema: {
         title: fields.slug({
           name: { label: "Title", validation: { isRequired: true } },
-        }),
-        description: fields.text({ label: "Description", multiline: true }),
-        publishedDate: fields.date({
-          label: "Publish date",
-          defaultValue: { kind: "today" },
-          validation: { isRequired: true },
-          description:
-            "Displayed on the post; this does not schedule publishing.",
         }),
         draft: fields.checkbox({
           label: "Draft",

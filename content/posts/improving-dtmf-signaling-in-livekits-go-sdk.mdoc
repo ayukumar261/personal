@@ -1,0 +1,103 @@
+---
+title: Improving DTMF Signaling in LiveKit's Go SDK
+draft: false
+---
+
+Sierra’s Marta Garcia Ferreiro and Raymond Mo wrote an interesting blog post, “[Teaching agents to navigate janky IVR systems](https://sierra.ai/blog/navigating-ivr-systems),” about how large enterprises use IVR (interactive voice response) systems that are pretty difficult for agents to navigate. If you don't know what an IVR system is, IBM’s “[What is interactive voice response (IVR)?](https://www.ibm.com/think/topics/interactive-voice-response)” offers a great example.[^1] Imagine it’s the 1990s, and you and your family want to watch a movie. You’d pick up your landline, call Moviefone, enter your postal code using the numbered keypad, and hear what was playing at nearby theaters and when.
+
+Anyway, humans are able to navigate IVR systems (somewhat) easily, but agents still suck at it. For example, if your agent calls your local The Home Depot, it’ll hear that jingle, try to turn its bass line into words, and then shit the bed and hallucinate. That's just one of the reasons Sierra’s blog post mentions. The one that stuck out to me the most is about DTMF (dual-tone multi-frequency) signaling. Think back to when you'd be on the phone with Spirit Airlines after your red-eye flight was canceled, using the keypad to enter your confirmation code. Those tones you'd hear are what DTMF signaling sounds like.
+
+Around the same time that this blog post came out, Noah Shinn's Instinct started to go viral. LinkedIn was full of these posts about people getting their AI-powered personal assistants to call every Dollar General store within a 100 mile radius and see if they had any in-stock Pokémon cards that they could scalp. In addition, I'm about to finish this side project that allows me to call +1 (762) 701-3110 and talk to an ElevenLabs agent.[^2] Between Sierra's blog post that had me thinking more about DTMF signaling and everyone sending Meta Muse agents to reserve a table at Olive Garden,[^3] I wanted my side project to start calling businesses for me.
+
+Let me take a second to explain my side project. In January of this year, I started as a Software Engineer at UJET, a Series D, San Francisco-based startup that builds contact center software for the world's largest companies. As a part of my onboarding, I sat in a handful of meetings to learn about this protocol from over twenty years ago. The main thing that I took away from those meetings was that SIP (Session Initiation Protocol) is this signaling protocol for starting, managing, and ending calls over IP (Internet Protocol) networks. This includes finding the person you’re calling, ringing their phone, negotiating how and where to exchange audio, handling holds and transfers, and ending the call. So, in an effort to learn, I decided to build this side project that I've been talking about.
+
+Something important to understand about SIP is that it's not what carries your voice from your iPhone to a human agent's Cisco handset in Fiji and back, for example. It only manages the lifecycle of that call. Your voice typically travels separately over RTP (Real-time Transport Protocol). Here's what I'm trying to say: I needed something to carry audio in both directions, from Twilio to an ElevenLabs agent and from the ElevenLabs agent back to Twilio, and self-hosting LiveKit enabled me to do that. With the added help of Twilio's Elastic SIP Trunking and LiveKit, anyone could call my agent, and my agent could call anyone.
+
+LiveKit is an open-source SFU (Selective Forwarding Unit) server built on top of Pion’s WebRTC implementation. It abstracts away a lot of the complexity that comes with WebRTC’s underlying protocols and APIs that enable real-time audio and video across the internet. Every LiveKit application has three things: rooms, participants, and tracks. Rooms have participants, and tracks are streams of information (e.g., audio and video) published by a participant.
+
+It’s been a couple of months since a police officer pulled you over and gave you a speeding ticket, and now you’re in a virtual traffic court hearing on Zoom. The judge, the clerk, you, and that damned police officer all have your cameras and microphones on. In LiveKit, the hearing is a room, each person is a participant, and every camera and microphone is a track. When the judges mutes you to threaten you with contempt of court, LiveKit tells every other participant that your microphone is muted, so the crossed-out microphone icon appears on everyone's screen. In addition, each participant only uploads the video from your camera once. LiveKit selectively forwards it to everyone else and sends a smaller version to anyone who only sees you alongside everyone else at the top of their screen.
+
+Thankfully, my side project is a lot simpler than Zoom. Every time someone calls (762) 701-3110, or my ElevenLabs agent calls someone else, the self-hosted LiveKit instance on my DigitalOcean Droplet creates a room with just two participants: a SIP participant representing the person on the phone and my ElevenLabs agent. Each of them publishes audio using a track and then subscribes to the other's track. Remember how LiveKit tells everyone in the courtroom that your microphone is muted? My agent also needs a way to tell the other person on the phone, “I just pressed 1,” and that’s where DTMF signaling comes in. You'd think those tones from DTMF signaling would travel over those tracks. Well, you're wrong. They travel through the LiveKit room over WebRTC data channels.[^4]
+
+I'll be honest. I didn't know what a WebRTC data channel was until like a couple weeks ago. It all started after I said to Codex, "I need my ElevenLabs agent to start punching in my debt card number via DTMF signaling, while on the phone with DraftKings." Then, when I was reviewing its code, as I always do, I noticed the following:
+
+```go
+ev := &livekit.SipDTMF{
+    Code:  dtmfCodes[d],
+    Digit: string(d),
+}
+if err := r.room.LocalParticipant.PublishDataPacket(
+    ev,
+    lksdk.WithDataPublishReliable(true),
+); err != nil {
+    return fmt.Errorf("room: send dtmf %q: %w", ev.Digit, err)
+}
+```
+
+Go can be stupidly hard to read, so let's walk through it. First, we build a `SipDTMF` event with two fields. `Code` is the key's numeric event code from RFC 4733 (0–9 for the digits, 10 for `*`, 11 for `#`), while `Digit` is the key as a string. Second, we call `PublishDataPacket` on the `LocalParticipant`, which is the ElevenLabs agent. We send the `SipDTMF` event as a data packet. The key press travels through the LiveKit room over a WebRTC data channel to the SIP participant, which is the stand-in LiveKit creates for whoever is on the other end of the phone line. LiveKit’s SIP service acts as the bridge between that SIP participant and Twilio, translating the `SipDTMF` event into RTP packets that tell Twilio which key was pressed. There's still one line I haven't talked about yet: `WithDataPublishReliable(true)`. It's the one line that really made no sense to me.
+
+Well, believe it or not, `WithDataPublishReliable(true)` is related to WebRTC data channels, which let applications "pass notes" to each other, alongside the audio and video the participants publish. For instance, when you play a low-poly, Three.js, multi-player, first-person shooter and your character is running around the map, your browser is constantly sending updates about your position. If every now and then, the update about your position is lost, it doesn't really matter because another update will arrive soon. Waiting for an outdated position is pointless. Now, imagine building the in-meeting chat widget for a Microsoft Teams. If your computer has more than 24 GB of RAM and Microsoft Teams actually works, you'd want its messages to arrive in order.[^5] If a message didn't arrive or didn't arrive in-order, that'd be pretty bad. Missing or reordered messages could make the conversation gibberish.
+
+WebRTC data channels are designed with that in mind. They can be configured to provide (1) reliable or partially reliable delivery of sent messages[^6] and (2) in-order or out-of-order delivery of sent messages. Therefore, if you're building that first-person shooter, you'd configure your WebRTC data channel to be partially reliable and out-of-order, and if you're building that in-meeting chat widget, you'd configure it to be reliable and in-order. The way I like to think about it, and the way Ilya Grigorik frames it in [_High Performance Browser Networking_](https://hpbn.co/), is that reliable, in-order delivery is like TCP, and unreliable, out-of-order delivery is like UDP.
+
+LiveKit provides a Go SDK for their SFU server, and they basically defined two types of WebRTC data channels: `lossy` (out-of-order and unreliable with 1 maximum retransmit) and `reliable` (in-order and reliable). That's what `WithDataPublishReliable(true)` does. It returns a configuration function of type `DataPublishOption`. When you pass that into `PublishDataPacket`, the Go SDK applies it and sends that message over the `reliable` WebRTC data channel. You might notice that my code worked just fine, but I still winded up checking out LiveKit's "[Sending DTMF using the API](https://docs.livekit.io/telephony/features/dtmf/#publishdtmf)"" documentation. Here's how LiveKit said to use the Go SDK's `PublishDataPacket`:
+
+```go
+// publishes 123# in DTMF
+localParticipant.PublishDataPacket(&livekit.SipDTMF{
+  Code: 1,
+  Digit: "1",
+})
+localParticipant.PublishDataPacket(&livekit.SipDTMF{
+  Code: 2,
+  Digit: "2",
+})
+localParticipant.PublishDataPacket(&livekit.SipDTMF{
+  Code: 3, 
+  Digit: "3",
+})
+localParticipant.PublishDataPacket(&livekit.SipDTMF{
+  Code: 11,
+  Digit: "#",
+})
+```
+
+LiveKit doesn't explicitly use `WithDataPublishReliable(true)` in their documentation, and I found that weird. So, I started digging through the Go SDK's history of pull requests to check whether `PublishDataPacket` defaulted to `lossy` or `reliable`. Turns out, [#415](https://github.com/livekit/server-sdk-go/pull/415) added DTMF signaling and made default to `DataPacket_RELIABLE`. It's the same behavior as passing `WithDataPublishReliable(true)`. That lasted 4 days, until [#421](https://github.com/livekit/server-sdk-go/pull/421) switched the default back to lossy because the other SDKs already used `lossy` by default. But even back then, the `lossy` WebRTC data channel was still ordered, so messages that did arrive, arrived in-order. [#659](https://github.com/livekit/server-sdk-go/pull/659) came along in May 2025 and updated the `lossy` WebRTC data channel to not support in-order delivery of sent-messages.
+
+This is pretty bad. You got charged for $849 at Express after you got pick-pocketed on the train. You're already pissed, and your credit union's IVR system asks for the last four digits of your credit card number. You hit "1234" on your keypad, but the IVR system receives "1243" and says "Sorry, we couldn't confirm your identity." Now, you're yelling at an IVR system because your credit union followed LiveKit's documentation to a tee. 
+
+On that same page, I noticed that the JavaScript and Python examples didn’t construct and publish data packets at all. Instead, they used helpers built specifically for DTMF signaling:
+
+```javascript
+// publishes 123# in DTMF
+await localParticipant.publishDtmf(1, '1');
+await localParticipant.publishDtmf(2, '2');
+await localParticipant.publishDtmf(3, '3');
+await localParticipant.publishDtmf(11, '#');
+```
+
+```python
+# publishes 123# in DTMF
+await local_participant.publish_dtmf(code=1, digit='1')
+await local_participant.publish_dtmf(code=2, digit='2')
+await local_participant.publish_dtmf(code=3, digit='3')
+await local_participant.publish_dtmf(code=11, digit='#')
+```
+
+So, I started to look a little deeper. The JavaScript, Python, Node, and Rust SDKs all had a helper built specifically for DTMF signaling, and the Go SDK simply didn’t. On top of that, every one of those helpers sent digits over the `reliable` WebRTC data channel, no matter what. This led me to engineer a `PublishDTMF` helper that takes in a code and a digit, constructs the data packet, and always publishes it over the `reliable` WebRTC data channel in LiveKit's Go SDK. I also designed a test that sends "123#" from one participant and checks that a second participant receives all four digits, in order, as real SipDTMF packets, then reads the publisher’s WebRTC statistics to confirm every digit went out on the correct WebRTC data channel.
+
+If you're one of the few people that've made it this far, I want to thank you so much for reading. I'm really happy that I have the opportunity to talk about everything that led me to my first open-source contribution. Building a side project to understand SIP, self-hosting LiveKit, reading Sierra's blog posts, implementing DTMF signaling, learning WebRTC from a networking textbook, and rummaging through GitHub repositories, it all led to [#1001](https://github.com/livekit/server-sdk-go/pull/1001).
+
+**Footnotes**
+
+1. If you want a second explainer, Twilio's “[What Is IVR (Interactive Voice Response) for Call Centers?](https://www.twilio.com/en-us/blog/ivr-what-it-is-and-how-it-benefits-contact-center)” covers IVR from the contact center side: menus that listen for keypad presses or speech, then route you to the right department or agent. It even mentions a choose-your-own-adventure road trip that Amber Case and Ben Greenstein built, where you steer with your keypad. Yes, that's the same Twilio that shows up later in this post.
+
+2. The side project is called Ringback, and it's on GitHub at [ayukumar261/ringback](https://github.com/ayukumar261/ringback). It runs LiveKit, LiveKit's SIP service, and a Go worker on my own server, bridges each call's audio to an ElevenLabs agent, and streams the live transcript to a dashboard. The agent presses keypad digits through a `send_dtmf` tool, which is where the `PublishDataPacket` code later in this post lives. Since it only talks SIP to the carrier, you can swap Twilio for any other SIP provider.
+
+3. Funny enough, some of those Muse calls weren't made by an AI at all. Jason Koebler at 404 Media reported, in "[Meta Tests Muse AI Agent Calls That Are Actually Made By Humans in a Call Center](https://www.404media.co/meta-tests-muse-ai-agent-calls-that-are-actually-made-by-humans-in-a-call-center/)," that Muse can hand a request off to a trained human in a call center, who places the call for you, and some testers didn't find out until afterward.
+
+4. Tracks and data channels don't even use the same protocol. Audio and video tracks travel over SRTP (Secure Real-time Transport Protocol), the encrypted version of RTP. Data channels travel over SCTP (Stream Control Transmission Protocol), which WebRTC tunnels through DTLS on top of UDP.
+
+5. The internet never promised to deliver packets in the order you sent them. Packets can take different routes, sit in different queues, or get resent after being lost, so your second message can beat your first one. To guarantee order, the receiver has to hold on to anything that shows up early until the missing message arrives, which is why in-order delivery can add delay.
+
+6. Partially reliable means the sender only tries so hard. You either cap how many times a lost message gets retransmitted (`maxRetransmits`) or how long the sender keeps trying (`maxPacketLifeTime`, in milliseconds), but you can't set both. LiveKit's Go SDK sets `MaxRetransmits` to 1 on its `lossy` WebRTC data channel, so a lost message gets one retry before it's gone.

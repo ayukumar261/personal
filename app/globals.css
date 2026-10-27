@@ -1,12 +1,59 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "lenis/dist/lenis.css";
+@import "./typeset.css";
 
 @custom-variant dark (&:is(.dark *));
 
+@layer components {
+  .typeset-post {
+    --typeset-size: 1.125rem;
+    --typeset-leading: 1.75;
+    --typeset-flow: 1.25em;
+    font-size: var(--typeset-size);
+  }
+
+  .typeset-post :where(ul, ol) {
+    padding-inline-start: 1.625em;
+  }
+
+  .typeset-post :where(li) {
+    margin-block-start: 0.375em;
+    padding-inline-start: 0.25em;
+  }
+
+  .typeset-post :where(li:first-child) {
+    margin-block-start: 0;
+  }
+
+  .typeset-post :where(li > p, li > ul, li > ol) {
+    margin-block-start: 0.5em;
+  }
+
+  .typeset-post :where(li > p:first-child) {
+    margin-block-start: 0;
+  }
+
+  .typeset-post :where(li)::marker {
+    color: var(--color-foreground);
+  }
+
+  .typeset-post .shiki,
+  .typeset-post .shiki span {
+    color: var(--shiki-light);
+  }
+
+  .dark .typeset-post .shiki,
+  .dark .typeset-post .shiki span {
+    color: var(--shiki-dark);
+  }
+}
+
 @theme inline {
     --font-heading: var(--font-sans);
-    --font-sans: var(--font-sans);
+    --font-sans: var(--font-newsreader);
+    --font-link: var(--font-inter);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

@@ -32,15 +32,14 @@ work. Remove a forwarding rule with `tailscale serve --https=4000 off`.
 Run `pnpm dev` and open <http://localhost:3100/keystatic>. No account or
 environment variables are needed in local mode.
 
-1. Select **Posts**, then create a post or open the included **Welcome** post.
-2. Set the title, URL slug, description, and publish date. The date is displayed
-   on the post and controls sorting; it does not schedule publication.
+1. Select **Posts**, then create a post or open an existing post.
+2. Set the title and URL slug.
 3. Write in the rich text editor. Uploaded images are saved under
    `public/images/posts/`.
 4. New posts start with **Draft** checked. Uncheck it when the post is ready,
-   then save. Drafts are hidden from both the list and individual post URLs.
-5. Open <http://localhost:3100/posts> to view published posts. Refresh after
-   saving changes in the editor.
+   then save. Drafts are hidden at their post URLs.
+5. Open <http://localhost:3100/posts/your-slug> to view a published post, and
+   link to it from `app/page.tsx`. Refresh after saving changes in the editor.
 
 Post files live in `content/posts/*.mdoc`; you can edit them directly as well.
 The schema is defined in `keystatic.config.ts`, and the server-only Reader API
