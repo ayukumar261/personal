@@ -1,6 +1,30 @@
-# Next.js template
+# Ayush Kumar's personal website
 
-This is a Next.js template with shadcn/ui.
+Personal website and articles, built with Next.js, shadcn/ui, and Keystatic.
+
+## Production deployment
+
+The website is hosted at [https://ayukumar261.com](https://ayukumar261.com).
+Dokploy manages the `personal` application in **Personal Website → production**.
+
+- Source: this repository's `main` branch, build path `/`.
+- Builder: Nixpacks with Node.js 22 (also specified in `.nvmrc`).
+- Build: `pnpm run build`; start: `pnpm run start`; container port: `3000`.
+- Dokploy environment: `NODE_ENV=production`, `PORT=3000`,
+  `NIXPACKS_NODE_VERSION=22`, and `NEXT_TELEMETRY_DISABLED=1`.
+- GitHub's push webhook triggers Dokploy automatically. Only pushes to `main`
+  deploy this application. Check its **Deployments** tab for build status and logs.
+- Cloudflare serves public HTTPS and forwards requests through the existing
+  Dokploy tunnel to Traefik on the server. The Dokploy domain route uses port
+  `3000` with its HTTPS toggle off because TLS is handled by Cloudflare and the
+  encrypted tunnel.
+
+To publish an update, commit your changes and push to `main`. Once that deployment
+finishes, the new build is live. No local development server is needed for visitors.
+The Meerkat hosting Dokploy and its internet connection must remain online.
+
+The published LiveKit article is at
+[Improving DTMF Signaling in LiveKit's Go SDK](https://ayukumar261.com/posts/improving-dtmf-signaling-in-livekits-go-sdk).
 
 ## Development from your MacBook
 
