@@ -30,13 +30,13 @@ export default async function Page() {
         </p>
         <p>
           I recently contributed to{" "}
-          <Link href="https://livekit.com">LiveKit</Link>'s Go SDK, and I wrote my
-          first blog post about it:{" "}
+          <Link href="https://livekit.com">LiveKit</Link>&apos;s Go SDK, and I
+          wrote my first blog post about it:{" "}
           <NextLink href={`/posts/${CONTRIBUTION_POST}`}>{post.title}</NextLink>
           .
         </p>
         <p>
-          I'm also on {" "}
+          I&apos;m also on{" "}
           <Link
             href="https://github.com/ayukumar261"
             iconClassName="dark:invert"

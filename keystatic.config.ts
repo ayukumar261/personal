@@ -15,6 +15,10 @@ export default config({
         title: fields.slug({
           name: { label: "Title", validation: { isRequired: true } },
         }),
+        description: fields.text({
+          label: "Description",
+          description: "A short summary for search results and link previews.",
+        }),
         draft: fields.checkbox({
           label: "Draft",
           defaultValue: true,

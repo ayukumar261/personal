@@ -28,6 +28,18 @@ export async function generateMetadata({
 
   return {
     title: post.title,
+    description: post.description || undefined,
+    alternates: { canonical: `/posts/${slug}` },
+    openGraph: {
+      type: "article",
+      title: post.title,
+      description: post.description || undefined,
+      url: `/posts/${slug}`,
+      siteName: "Ayush Kumar",
+      locale: "en_US",
+      authors: ["Ayush Kumar"],
+    },
+    twitter: { card: "summary_large_image" },
   }
 }
 

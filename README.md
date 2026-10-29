@@ -69,6 +69,11 @@ Post files live in `content/posts/*.mdoc`; you can edit them directly as well.
 The schema is defined in `keystatic.config.ts`, and the server-only Reader API
 is configured in `lib/keystatic.ts`.
 
+Each published post gets a 1200 × 630 social preview at
+`/posts/your-slug/opengraph-image`, using its title and the site's typography.
+The **Description** field supplies the summary for LinkedIn and other link previews.
+The preview fonts are bundled in `assets/fonts/` with their SIL Open Font Licenses.
+
 To publish changes, commit the post files and uploaded images, then deploy a
 new build. Public posts are generated at build time. The local editor and its
 API return 404 in production (`pnpm build && pnpm start`). Editing on a
