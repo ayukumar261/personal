@@ -19,6 +19,20 @@ export default config({
           label: "Description",
           description: "A short summary for search results and link previews.",
         }),
+        authors: fields.array(
+          fields.object({
+            name: fields.text({
+              label: "Name",
+              validation: { isRequired: true },
+            }),
+            url: fields.url({ label: "Website" }),
+          }),
+          {
+            label: "Authors",
+            itemLabel: (props) => props.fields.name.value,
+            validation: { length: { min: 1 } },
+          }
+        ),
         draft: fields.checkbox({
           label: "Draft",
           defaultValue: true,

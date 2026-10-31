@@ -4,9 +4,10 @@ import { join } from "node:path"
 import { notFound } from "next/navigation"
 import { ImageResponse } from "next/og"
 
+import { formatAuthors } from "@/lib/authors"
 import { getPublishedPost, getPublishedPosts } from "@/lib/keystatic"
 
-export const alt = "An article by Ayush Kumar"
+export const alt = "Blog post preview"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
@@ -55,7 +56,7 @@ export default async function OpenGraphImage({
           borderBottom: "1px solid #dedede",
         }}
       >
-        Ayush Kumar
+        {formatAuthors(post.authors)}
       </div>
       <div
         style={{

@@ -1,10 +1,13 @@
 import Markdoc from "@markdoc/markdoc"
+import { ArrowLeft } from "lucide-react"
 import type { Metadata } from "next"
+import NextLink from "next/link"
 import { notFound } from "next/navigation"
 import * as React from "react"
 import { bundledLanguages, codeToHtml } from "shiki"
 
 import { Container } from "@/components/container"
+import { formatAuthors } from "@/lib/authors"
 import { getPublishedPost, getPublishedPosts } from "@/lib/keystatic"
 import { markdocConfig } from "@/lib/markdoc"
 
@@ -29,6 +32,10 @@ export async function generateMetadata({
   return {
     title: post.title,
     description: post.description || undefined,
+    authors: post.authors.map(({ name, url }) => ({
+      name,
+      url: url || undefined,
+    })),
     alternates: { canonical: `/posts/${slug}` },
     openGraph: {
       type: "article",
@@ -37,7 +44,7 @@ export async function generateMetadata({
       url: `/posts/${slug}`,
       siteName: "Ayush Kumar",
       locale: "en_US",
-      authors: ["Ayush Kumar"],
+      authors: post.authors.map(({ name }) => name),
     },
     twitter: { card: "summary_large_image" },
   }
@@ -63,11 +70,27 @@ export default async function PostPage({ params }: PostProps) {
 
   return (
     <Container>
-      <article className="mt-[18px] sm:mt-14 lg:mt-20">
+      <nav aria-label="Main navigation" className="flex">
+        <NextLink
+          href="/"
+          className="inline-flex items-center gap-2 rounded-sm py-2 font-link text-sm leading-6 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+        >
+          <ArrowLeft
+            aria-hidden="true"
+            className="size-4 shrink-0"
+            strokeWidth={1.5}
+          />
+          Home
+        </NextLink>
+      </nav>
+      <article className="mt-10 sm:mt-12 lg:mt-14">
         <header className="mb-8 pb-2 sm:mb-10 sm:pb-4">
           <h1 className="text-4xl leading-[1.1] font-normal tracking-tight text-pretty sm:text-5xl">
             {post.title}
           </h1>
+          <p className="mt-6 font-link text-base text-muted-foreground">
+            By {formatAuthors(post.authors)}
+          </p>
         </header>
         <div className="typeset typeset-post">
           {Markdoc.renderers.react(content, React, {
