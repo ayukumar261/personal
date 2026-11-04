@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import NextLink from "next/link"
 
-import prPreview from "@/assets/images/livekit-server-sdk-go-pr-1001.png"
+import prPreview from "@/assets/images/improving-dtmf-signaling-in-livekits-go-sdk.png"
 import { Container } from "@/components/container"
 import { Footer } from "@/components/footer"
 import { Link } from "@/components/ui/link"
@@ -53,7 +53,7 @@ export default async function Page() {
           <h2 className="mt-6 text-xl leading-snug text-pretty decoration-foreground/30 underline-offset-4 group-hover:underline">
             {post.title}
           </h2>
-          <p className="mt-2 font-link text-[0.9375rem] leading-relaxed text-pretty text-muted-foreground">
+          <p className="mt-2 line-clamp-2 font-link text-[0.9375rem] leading-relaxed text-pretty text-muted-foreground">
             {renderDescription(post.description)}
           </p>
         </NextLink>
