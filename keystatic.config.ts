@@ -17,7 +17,8 @@ export default config({
         }),
         description: fields.text({
           label: "Description",
-          description: "A short summary for search results and link previews.",
+          description:
+            "A short summary for search results and link previews. Wrap code in `backticks`.",
         }),
         authors: fields.array(
           fields.object({

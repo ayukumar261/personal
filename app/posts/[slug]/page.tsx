@@ -7,7 +7,9 @@ import * as React from "react"
 import { bundledLanguages, codeToHtml } from "shiki"
 
 import { Container } from "@/components/container"
+import { Footer } from "@/components/footer"
 import { formatAuthors } from "@/lib/authors"
+import { plainDescription } from "@/lib/description"
 import { getPublishedPost, getPublishedPosts } from "@/lib/keystatic"
 import { markdocConfig } from "@/lib/markdoc"
 
@@ -29,9 +31,11 @@ export async function generateMetadata({
     notFound()
   }
 
+  const description = plainDescription(post.description) || undefined
+
   return {
     title: post.title,
-    description: post.description || undefined,
+    description,
     authors: post.authors.map(({ name, url }) => ({
       name,
       url: url || undefined,
@@ -40,7 +44,7 @@ export async function generateMetadata({
     openGraph: {
       type: "article",
       title: post.title,
-      description: post.description || undefined,
+      description,
       url: `/posts/${slug}`,
       siteName: "Ayush Kumar",
       locale: "en_US",
@@ -98,6 +102,7 @@ export default async function PostPage({ params }: PostProps) {
           })}
         </div>
       </article>
+      <Footer />
     </Container>
   )
 }
