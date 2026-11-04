@@ -23,7 +23,7 @@ async function Link({
       data-slot="link"
       href={href}
       className={cn(
-        "inline-block rounded bg-foreground/10 px-[5px] py-px font-link text-[0.9375rem] leading-tight transition-colors hover:bg-foreground/15",
+        "inline-block rounded-sm bg-foreground/10 px-[5px] py-px font-link text-[0.9375rem] leading-tight transition-colors hover:bg-foreground/15",
         className
       )}
       {...props}
