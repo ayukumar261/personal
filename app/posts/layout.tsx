@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ayukumar261.com"),
+  metadataBase: new URL("https://www.ayukumar261.com"),
 }
 
 export default function PostsLayout({

@@ -24,7 +24,7 @@ finishes, the new build is live. No local development server is needed for visit
 The Meerkat hosting Dokploy and its internet connection must remain online.
 
 The published LiveKit article is at
-[Improving DTMF Signaling in LiveKit's Go SDK](https://ayukumar261.com/posts/improving-dtmf-signaling-in-livekits-go-sdk).
+[Reliable DTMF Signaling in LiveKit's Go SDK](https://www.ayukumar261.com/posts/reliable-dtmf-signaling-in-livekits-go-sdk).
 
 ## Development from your MacBook
 
@@ -57,13 +57,14 @@ Run `pnpm dev` and open <http://localhost:3100/keystatic>. No account or
 environment variables are needed in local mode.
 
 1. Select **Posts**, then create a post or open an existing post.
-2. Set the title and URL slug.
+2. Set the title. Keystatic generates the URL slug from it; you can edit the slug.
 3. Write in the rich text editor. Uploaded images are saved under
    `public/images/posts/`.
 4. New posts start with **Draft** checked. Uncheck it when the post is ready,
    then save. Drafts are hidden at their post URLs.
-5. Open <http://localhost:3100/posts/your-slug> to view a published post, and
-   link to it from `app/page.tsx`. Refresh after saving changes in the editor.
+5. Open <http://localhost:3100/posts/your-slug> to view a published post. Published
+   posts appear on the homepage automatically using their saved titles and slugs.
+   Refresh after saving changes in the editor.
 
 Post files live in `content/posts/*.mdoc`; you can edit them directly as well.
 The schema is defined in `keystatic.config.ts`, and the server-only Reader API
